@@ -213,7 +213,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <button
             onClick={() => router.push('/dashboard/deposit')}
             className="card hover:shadow-md transition-shadow cursor-pointer group"
@@ -262,6 +262,24 @@ export default function Dashboard() {
                 <div>
                   <h3 className="font-semibold text-gray-900">Transactions</h3>
                   <p className="text-sm text-gray-600">View spending history</p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+            </div>
+          </button>
+
+          <button
+            onClick={() => router.push('/dashboard/test-transaction')}
+            className="card hover:shadow-md transition-shadow cursor-pointer group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Test Transactions</h3>
+                  <p className="text-sm text-gray-600">Validate merchants & test</p>
                 </div>
               </div>
               <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />

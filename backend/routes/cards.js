@@ -7,6 +7,28 @@ const router = express.Router();
 // Apply authentication middleware to all routes
 router.use(verifyToken);
 
+// Helper function to calculate card status
+const calculateCardStatus = (expiredDate) => {
+  // Get current date in YYYY-MM-DD format for consistent comparison
+  const now = new Date();
+  const nowDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  
+  // Handle invalid dates
+  if (!expiredDate || isNaN(new Date(expiredDate).getTime())) {
+    console.warn('Invalid expiration date:', expiredDate);
+    return false;
+  }
+  
+  // Compare date strings directly (YYYY-MM-DD format)
+  const isActive = expiredDate > nowDate;
+  console.log(expiredDate, nowDate, isActive);
+  
+  // Log for debugging (can be removed in production)
+  console.log(`Card status: expired=${expiredDate}, now=${nowDate}, isActive=${isActive}`);
+  
+  return isActive;
+};
+
 // Generate virtual card number
 const generateCardNumber = () => {
   // Generate a 16-digit card number (Visa format: 4XXXXXXXXXXXXXXX)
@@ -92,6 +114,7 @@ router.get('/', async (req, res) => {
       SELECT 
         dc.id,
         dc.number,
+        dc.cvv,
         dc.expired,
         dc.created,
         a.balance as account_balance
@@ -105,10 +128,11 @@ router.get('/', async (req, res) => {
       cards: cards.map(card => ({
         id: card.id,
         number: card.number,
+        cvv: card.cvv,
         expired: card.expired,
         created: card.created,
         accountBalance: card.account_balance,
-        isActive: new Date(card.expired) > new Date()
+        isActive: calculateCardStatus(card.expired)
       }))
     });
 
@@ -146,11 +170,12 @@ router.get('/:id', async (req, res) => {
       card: {
         id: card.id,
         number: card.number,
+        cvv: card.cvv,
         expired: card.expired,
         created: card.created,
         accountId: card.account_id,
         accountBalance: card.account_balance,
-        isActive: new Date(card.expired) > new Date()
+        isActive: calculateCardStatus(card.expired)
       }
     });
 
@@ -180,15 +205,37 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    // Mark card as expired
+    // Mark card as expired by setting expiration to current time
     await runQuery(
-      'UPDATE Debit_Cards SET expired = datetime("now") WHERE id = ?',
+      'UPDATE Debit_Cards SET expired = datetime(2000) WHERE id = ?',
       [cardId]
     );
 
+    // Get the updated card information
+    const updatedCard = await getRow(`
+      SELECT 
+        dc.id,
+        dc.number,
+        dc.cvv,
+        dc.expired,
+        dc.created,
+        a.balance as account_balance
+      FROM Debit_Cards dc
+      JOIN Account a ON dc.account_id = a.id
+      WHERE dc.id = ? AND dc.user_id = ?
+    `, [cardId, userId]);
     res.json({
       message: 'Card deactivated successfully',
-      cardId: cardId
+      cardId: cardId,
+      card: {
+        id: updatedCard.id,
+        number: updatedCard.number,
+        cvv: updatedCard.cvv,
+        expired: updatedCard.expired,
+        created: updatedCard.created,
+        accountBalance: updatedCard.account_balance,
+        isActive: calculateCardStatus(updatedCard.expired)
+      }
     });
 
   } catch (error) {

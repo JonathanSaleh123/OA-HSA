@@ -22,20 +22,16 @@ const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
-    console.log('❌ Token verification failed: No token provided');
     return res.status(401).json({
       error: 'Access token required'
     });
   }
 
   try {
-    console.log('🔍 Verifying JWT token...');
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('✅ Token verified for user ID:', decoded.userId);
     req.user = decoded;
     next();
   } catch (error) {
-    console.log('❌ Token verification failed:', error.message);
     return res.status(401).json({
       error: 'Invalid or expired token'
     });
@@ -46,11 +42,9 @@ const verifyToken = (req, res, next) => {
 router.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('🔐 Registration attempt for:', email);
 
     // Validate input
     if (!email || !password) {
-      console.log('❌ Registration failed: Missing email or password');
       return res.status(400).json({
         error: 'Email and password are required'
       });
@@ -63,14 +57,12 @@ router.post('/register', async (req, res) => {
     }
 
     // Check if user already exists
-    console.log('🔍 Checking if user exists...');
     const existingUser = await getRow(
       'SELECT id FROM Users WHERE email = ?',
       [email]
     );
 
     if (existingUser) {
-      console.log('❌ Registration failed: User already exists');
       return res.status(409).json({
         error: 'User with this email already exists'
       });
@@ -81,23 +73,18 @@ router.post('/register', async (req, res) => {
     const passHash = bcrypt.hashSync(password, salt);
 
     // Create user
-    console.log('👤 Creating new user...');
     const userResult = await runQuery(
       'INSERT INTO Users (email, salt, pass_hash) VALUES (?, ?, ?)',
       [email, salt, passHash]
     );
-    console.log('✅ User created with ID:', userResult.lastID);
 
     // Create HSA account for the user
-    console.log('🏦 Creating HSA account...');
     await runQuery(
       'INSERT INTO Account (user_id, balance) VALUES (?, ?)',
       [userResult.lastID, 0.00]
     );
-    console.log('✅ HSA account created');
 
     // Generate JWT token
-    console.log('🔑 Generating JWT token...');
     const token = generateToken(userResult.lastID, email);
 
     res.status(201).json({
@@ -121,45 +108,36 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('🔑 Login attempt for:', email);
 
     // Validate input
     if (!email || !password) {
-      console.log('❌ Login failed: Missing email or password');
       return res.status(400).json({
         error: 'Email and password are required'
       });
     }
 
     // Find user
-    console.log('🔍 Looking up user in database...');
     const user = await getRow(
       'SELECT id, email, pass_hash FROM Users WHERE email = ?',
       [email]
     );
 
     if (!user) {
-      console.log('❌ Login failed: User not found');
       return res.status(401).json({
         error: 'Invalid email or password'
       });
     }
-    console.log('✅ User found with ID:', user.id);
 
     // Verify password
-    console.log('🔐 Verifying password...');
     const isValidPassword = bcrypt.compareSync(password, user.pass_hash);
     
     if (!isValidPassword) {
-      console.log('❌ Login failed: Invalid password');
       return res.status(401).json({
         error: 'Invalid email or password'
       });
     }
-    console.log('✅ Password verified successfully');
 
     // Generate JWT token
-    console.log('🔑 Generating JWT token...');
     const token = generateToken(user.id, user.email);
 
     res.json({

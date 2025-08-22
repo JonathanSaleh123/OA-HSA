@@ -13,32 +13,18 @@ const transactionRoutes = require('./routes/transactions');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Request logging middleware
+// Request logging middleware - only log errors
 app.use((req, res, next) => {
   const start = Date.now();
   
-  // Log request details
-  console.log(`\n📥 ${new Date().toISOString()} - ${req.method} ${req.path}`);
-  console.log(`   Headers:`, {
-    'User-Agent': req.get('User-Agent'),
-    'Authorization': req.get('Authorization') ? 'Bearer ***' : 'None',
-    'Content-Type': req.get('Content-Type'),
-    'Origin': req.get('Origin'),
-    'Referer': req.get('Referer')
-  });
-  
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log(`   Body:`, JSON.stringify(req.body, null, 2));
-  }
-  
-  // Log response
+  // Only log response errors
   res.on('finish', () => {
-    const duration = Date.now() - start;
-    const statusColor = res.statusCode >= 400 ? '🔴' : res.statusCode >= 300 ? '🟡' : '🟢';
-    console.log(`📤 ${statusColor} ${res.statusCode} - ${req.method} ${req.path} (${duration}ms)`);
-    
     if (res.statusCode >= 400) {
-      console.log(`   Error Response:`, res.locals.errorMessage || 'No error details');
+      const duration = Date.now() - start;
+      console.error(`ERROR ${res.statusCode} - ${req.method} ${req.path} (${duration}ms)`);
+      if (res.locals.errorMessage) {
+        console.error(`Error: ${res.locals.errorMessage}`);
+      }
     }
   });
   
@@ -96,11 +82,8 @@ app.use('*', (req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('\n🚨 Global Error Handler:');
-  console.error(`   Error: ${err.message}`);
-  console.error(`   Stack: ${err.stack}`);
-  console.error(`   Request: ${req.method} ${req.path}`);
-  console.error(`   User Agent: ${req.get('User-Agent')}`);
+  console.error(`ERROR: ${err.message}`);
+  console.error(`Stack: ${err.stack}`);
   
   // Store error message for logging middleware
   res.locals.errorMessage = err.message;
@@ -113,9 +96,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 HSA Backend Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔗 API Base: http://localhost:${PORT}/api`);
+  console.log(`HSA Backend Server running on port ${PORT}`);
 });
 
 module.exports = app;

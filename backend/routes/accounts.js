@@ -45,22 +45,18 @@ router.get('/:id', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const userId = req.user.userId;
-    console.log('🏦 Fetching HSA account for user ID:', userId);
 
     // Get user's HSA account
-    console.log('🔍 Querying database for account...');
     const account = await getRow(
       'SELECT * FROM Account WHERE user_id = ?',
       [userId]
     );
 
     if (!account) {
-      console.log('❌ HSA account not found for user ID:', userId);
       return res.status(404).json({
         error: 'HSA account not found'
       });
     }
-    console.log('✅ HSA account found:', { id: account.id, balance: account.balance });
 
     res.json({
       account: {

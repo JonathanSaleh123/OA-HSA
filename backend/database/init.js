@@ -7,10 +7,9 @@ const dbPath = path.join(__dirname, 'hsa.db');
 // Create/connect to database
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
-    console.error('❌ Error opening database:', err.message);
+    console.error('Error opening database:', err.message);
     process.exit(1);
   }
-  console.log('✅ Connected to SQLite database');
 });
 
 // Enable foreign keys
@@ -31,11 +30,10 @@ const createTables = () => {
       )
     `, (err) => {
       if (err) {
-        console.error('❌ Error creating Users table:', err.message);
+        console.error('Error creating Users table:', err.message);
         reject(err);
         return;
       }
-      console.log('✅ Users table created/verified');
     });
 
     // Account table
@@ -50,11 +48,10 @@ const createTables = () => {
       )
     `, (err) => {
       if (err) {
-        console.error('❌ Error creating Account table:', err.message);
+        console.error('Error creating Account table:', err.message);
         reject(err);
         return;
       }
-      console.log('✅ Account table created/verified');
     });
 
     // Debit_Cards table
@@ -72,11 +69,10 @@ const createTables = () => {
       )
     `, (err) => {
       if (err) {
-        console.error('❌ Error creating Debit_Cards table:', err.message);
+        console.error('Error creating Debit_Cards table:', err.message);
         reject(err);
         return;
       }
-      console.log('✅ Debit_Cards table created/verified');
     });
 
     // Merchant_Codes table
@@ -89,11 +85,10 @@ const createTables = () => {
       )
     `, (err) => {
       if (err) {
-        console.error('❌ Error creating Merchant_Codes table:', err.message);
+        console.error('Error creating Merchant_Codes table:', err.message);
         reject(err);
         return;
       }
-      console.log('✅ Merchant_Codes table created/verified');
     });
 
     // Transactions table
@@ -110,11 +105,10 @@ const createTables = () => {
       )
     `, (err) => {
       if (err) {
-        console.error('❌ Error creating Transactions table:', err.message);
+        console.error('Error creating Transactions table:', err.message);
         reject(err);
         return;
       }
-      console.log('✅ Transactions table created/verified');
       resolve();
     });
   });
@@ -155,11 +149,10 @@ const seedInitialData = () => {
 
     stmt.finalize((err) => {
       if (err) {
-        console.error('❌ Error seeding merchant codes:', err.message);
+        console.error('Error seeding merchant codes:', err.message);
         reject(err);
         return;
       }
-      console.log('✅ Merchant codes seeded');
       resolve();
     });
   });
@@ -168,26 +161,19 @@ const seedInitialData = () => {
 // Main initialization
 const initDatabase = async () => {
   try {
-    console.log('🚀 Initializing HSA Database...\n');
-    
     await createTables();
     await seedInitialData();
-    
-    console.log('\n🎉 Database initialization completed successfully!');
-    console.log('📁 Database file:', dbPath);
     
     // Close database connection
     db.close((err) => {
       if (err) {
-        console.error('❌ Error closing database:', err.message);
-      } else {
-        console.log('🔒 Database connection closed');
+        console.error('Error closing database:', err.message);
       }
       process.exit(0);
     });
     
   } catch (error) {
-    console.error('❌ Database initialization failed:', error);
+    console.error('Database initialization failed:', error);
     process.exit(1);
   }
 };

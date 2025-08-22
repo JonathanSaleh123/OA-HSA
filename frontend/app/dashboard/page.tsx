@@ -15,11 +15,13 @@ import {
 import toast from 'react-hot-toast'
 
 
+/** User account information */
 interface User {
   id: number
   email: string
 }
 
+/** HSA account details */
 interface Account {
   id: number
   balance: number
@@ -27,6 +29,7 @@ interface Account {
   updated: string
 }
 
+/** Virtual debit card information */
 interface Card {
   id: number
   number: string
@@ -35,6 +38,7 @@ interface Card {
   isActive: boolean
 }
 
+/** Transaction record */
 interface Transaction {
   id: number
   merchantName: string
@@ -44,26 +48,43 @@ interface Transaction {
   isMedical: boolean
 }
 
+/**
+ * Main dashboard component that displays HSA account overview
+ * Shows account balance, recent transactions, and quick actions
+ */
 export default function Dashboard() {
+  // User authentication state
   const [user, setUser] = useState<User | null>(null)
+  // HSA account information
   const [account, setAccount] = useState<Account | null>(null)
+  // User's virtual debit cards
   const [cards, setCards] = useState<Card[]>([])
+  // Recent transaction history
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
+  // Total number of transactions
   const [totalTransactions, setTotalTransactions] = useState(0)
+  // Loading state for initial data fetch
   const [isLoading, setIsLoading] = useState(true)
+  // Flag to prevent duplicate data fetching
   const [isDataFetched, setIsDataFetched] = useState(false)
   const router = useRouter()
 
+  // Check authentication on component mount
   useEffect(() => {
     checkAuth()
   }, [])
 
+  // Fetch dashboard data when user is authenticated
   useEffect(() => {
     if (user && !isDataFetched) {
       fetchDashboardData()
     }
   }, [user, isDataFetched])
 
+  /**
+   * Checks user authentication by validating stored tokens
+   * Redirects to login if authentication fails
+   */
   const checkAuth = () => {
     const token = localStorage.getItem('hsa_token')
     const userData = localStorage.getItem('hsa_user')
@@ -82,6 +103,10 @@ export default function Dashboard() {
     }
   }
 
+  /**
+   * Fetches all dashboard data including account, transactions, and cards
+   * Handles authentication and error states appropriately
+   */
   const fetchDashboardData = async () => {
     if (!user) return
 
@@ -95,11 +120,8 @@ export default function Dashboard() {
         }
       })
       
-      console.log('Account response status:', accountResponse.status)
-      
       if (accountResponse.ok) {
         const accountData = await accountResponse.json()
-        console.log('Account data:', accountData)
         setAccount(accountData.account)
         
         // Fetch recent transactions after we have the account
@@ -109,39 +131,32 @@ export default function Dashboard() {
           }
         })
         
-        console.log('Transactions response status:', transactionsResponse.status)
-        
         if (transactionsResponse.ok) {
           const transactionsData = await transactionsResponse.json()
-          console.log('Transactions data:', transactionsData)
           setRecentTransactions(transactionsData.transactions.slice(0, 5))
           setTotalTransactions(transactionsData.transactions.length)
         } else {
-          console.error('Transactions response not ok:', transactionsResponse.status, transactionsResponse.statusText)
+          // Log error for monitoring but don't show to user
+          console.warn(`Failed to fetch transactions: ${transactionsResponse.status} ${transactionsResponse.statusText}`)
         }
       } else {
-        console.error('Account response not ok:', accountResponse.status, accountResponse.statusText)
-        const errorText = await accountResponse.text()
-        console.error('Error response:', errorText)
+        // Log error for monitoring but don't show to user
+        console.warn(`Failed to fetch account: ${accountResponse.status} ${accountResponse.statusText}`)
       }
 
-      // Fetch cards
+      // Fetch cards data
       const cardsResponse = await fetch('/api/cards', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
       
-      console.log('Cards response status:', cardsResponse.status)
-      
       if (cardsResponse.ok) {
         const cardsData = await cardsResponse.json()
-        console.log('Cards data:', cardsData)
         setCards(cardsData.cards)
       } else {
-        console.error('Cards response not ok:', cardsResponse.status, cardsResponse.statusText)
-        const errorText = await cardsResponse.text()
-        console.error('Cards error response:', errorText)
+        // Log error for monitoring but don't show to user
+        console.warn(`Failed to fetch cards: ${cardsResponse.status} ${cardsResponse.statusText}`)
       }
 
     } catch (error) {
@@ -153,6 +168,9 @@ export default function Dashboard() {
     }
   }
 
+  /**
+   * Handles user logout by clearing stored tokens and redirecting to login
+   */
   const handleLogout = () => {
     localStorage.removeItem('hsa_token')
     localStorage.removeItem('hsa_user')
@@ -160,6 +178,11 @@ export default function Dashboard() {
     router.push('/')
   }
 
+  /**
+   * Formats a number as USD currency
+   * @param amount - The amount to format
+   * @returns Formatted currency string
+   */
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -167,6 +190,11 @@ export default function Dashboard() {
     }).format(amount)
   }
 
+  /**
+   * Formats a date string to a readable format
+   * @param dateString - ISO date string to format
+   * @returns Formatted date string
+   */
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',

@@ -52,7 +52,6 @@ export default function TransactionsPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [medicalFilter, setMedicalFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const router = useRouter()
@@ -154,17 +153,12 @@ export default function TransactionsPage() {
                          transaction.merchantCode.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter
-    const matchesMedical = medicalFilter === 'all' || 
-                          (medicalFilter === 'medical' && transaction.isMedical) ||
-                          (medicalFilter === 'non-medical' && !transaction.isMedical)
-    
-    return matchesSearch && matchesStatus && matchesMedical
+    return matchesSearch && matchesStatus
   })
 
   const resetFilters = () => {
     setSearchTerm('')
     setStatusFilter('all')
-    setMedicalFilter('all')
     setCurrentPage(1)
     setTransactions([])
     fetchTransactions()
@@ -230,7 +224,7 @@ export default function TransactionsPage() {
               <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">HSA Manager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">HSA by Human Interest</h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
@@ -343,16 +337,6 @@ export default function TransactionsPage() {
                 <option value="declined">Declined</option>
               </select>
 
-              <select
-                value={medicalFilter}
-                onChange={(e) => setMedicalFilter(e.target.value)}
-                className="input-field"
-              >
-                <option value="all">All Types</option>
-                <option value="medical">Medical Only</option>
-                <option value="non-medical">Non-Medical Only</option>
-              </select>
-
               <button
                 onClick={resetFilters}
                 className="btn-secondary"
@@ -377,7 +361,7 @@ export default function TransactionsPage() {
               <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 text-lg">No transactions found</p>
               <p className="text-sm text-gray-500">
-                {searchTerm || statusFilter !== 'all' || medicalFilter !== 'all' 
+                {searchTerm || statusFilter !== 'all'
                   ? 'Try adjusting your filters' 
                   : 'Your transaction history will appear here'}
               </p>

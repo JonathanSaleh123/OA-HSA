@@ -200,9 +200,9 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    // Mark card as expired by setting expiration to current time
+    // Mark card as expired by setting expiration
     await runQuery(
-      'UPDATE Debit_Cards SET expired = datetime(2000) WHERE id = ?',
+      "UPDATE Debit_Cards SET expired = '2000-01-01 00:00:00' WHERE id = ?",
       [cardId]
     );
 

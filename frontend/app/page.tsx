@@ -158,10 +158,10 @@ export default function Home() {
               <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">HSA Manager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">HSA by Human Interest</h1>
             </div>
             <div className="text-sm text-gray-600">
-              Health Savings Account Platform
+              Health Savings Account Web App
             </div>
           </div>
         </div>
@@ -177,8 +177,8 @@ export default function Home() {
                 Manage Your Health Savings Account
               </h2>
               <p className="text-xl text-gray-600 leading-relaxed">
-                Take control of your healthcare finances with our comprehensive HSA platform. 
-                Track expenses, issue virtual cards, and maximize your tax advantages.
+                Manage Deposits, Track expenses, Issue virtual cards, and more.
+                This is a demo application. No real financial transactions will occur.
               </p>
             </div>
 
@@ -226,7 +226,7 @@ export default function Home() {
           </div>
 
           {/* Right Side - Authentication Form */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200 animate-float">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
                 {isLogin ? 'Welcome Back' : 'Create Account'}

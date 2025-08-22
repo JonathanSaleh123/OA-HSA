@@ -179,7 +179,7 @@ export default function DepositPage() {
               <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">HSA Manager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">HSA by Human Interest</h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
@@ -203,7 +203,7 @@ export default function DepositPage() {
 
         {/* Page Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-10 h-10 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Plus className="w-8 h-8 text-success-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Deposit Funds</h1>
@@ -306,36 +306,6 @@ export default function DepositPage() {
               </p>
             </div>
 
-            {/* Deposit Info */}
-            <div className="card">
-              <div className="card-header">
-                <h3 className="card-title">Deposit Information</h3>
-                <p className="card-subtitle">What you need to know</p>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-success-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Tax-Advantaged</p>
-                    <p className="text-xs text-gray-600">Contributions are tax-deductible</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-success-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Immediate Availability</p>
-                    <p className="text-xs text-gray-600">Funds available for medical expenses</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 text-warning-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Annual Limits</p>
-                    <p className="text-xs text-gray-600">Check IRS contribution limits</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </main>

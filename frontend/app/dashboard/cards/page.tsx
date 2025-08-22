@@ -123,10 +123,27 @@ export default function CardsPage() {
       
       if (response.ok) {
         const data = await response.json()
-
         setCards(data.cards)
       } else {
-        toast.error('Failed to fetch cards')
+        // Check if response is JSON before trying to parse
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json()
+            toast.error(errorData.error || 'Failed to fetch cards')
+          } catch (parseError) {
+            toast.error('Failed to fetch cards')
+          }
+        } else {
+          // Handle non-JSON error responses (like rate limiting)
+          const errorText = await response.text()
+          console.error('Non-JSON error response:', errorText)
+          if (errorText.includes('Too many requests') || errorText.includes('Rate limit')) {
+            toast.error('Rate limit exceeded. Please try again later.')
+          } else {
+            toast.error('Failed to fetch cards')
+          }
+        }
       }
     } catch (error) {
       console.error('Cards fetch error:', error)
@@ -179,8 +196,25 @@ export default function CardsPage() {
         setCards(prev => [newCard, ...prev])
         setShowRequestForm(false)
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Failed to issue new card')
+        // Check if response is JSON before trying to parse
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json()
+            toast.error(errorData.error || 'Failed to issue new card')
+          } catch (parseError) {
+            toast.error('Failed to issue new card')
+          }
+        } else {
+          // Handle non-JSON error responses (like rate limiting)
+          const errorText = await response.text()
+          console.error('Non-JSON error response:', errorText)
+          if (errorText.includes('Too many requests') || errorText.includes('Rate limit')) {
+            toast.error('Rate limit exceeded. Please try again later.')
+          } else {
+            toast.error('Failed to issue new card')
+          }
+        }
       }
     } catch (error) {
       console.error('Request card error:', error)
@@ -211,6 +245,21 @@ export default function CardsPage() {
       if (response.ok) {
         const data = await response.json()
         setCardTransactions(data.transactions)
+      } else {
+        // Check if response is JSON before trying to parse
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json()
+            console.error('Card transactions error:', errorData.error)
+          } catch (parseError) {
+            console.error('Failed to parse card transactions error')
+          }
+        } else {
+          // Handle non-JSON error responses (like rate limiting)
+          const errorText = await response.text()
+          console.error('Non-JSON error response for card transactions:', errorText)
+        }
       }
     } catch (error) {
       console.error('Card transactions error:', error)
@@ -262,8 +311,25 @@ export default function CardsPage() {
           setSelectedCard(null)
         }
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Failed to deactivate card')
+        // Check if response is JSON before trying to parse
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json()
+            toast.error(errorData.error || 'Failed to deactivate card')
+          } catch (parseError) {
+            toast.error('Failed to deactivate card')
+          }
+        } else {
+          // Handle non-JSON error responses (like rate limiting)
+          const errorText = await response.text()
+          console.error('Non-JSON error response:', errorText)
+          if (errorText.includes('Too many requests') || errorText.includes('Rate limit')) {
+            toast.error('Rate limit exceeded. Please try again later.')
+          } else {
+            toast.error('Failed to deactivate card')
+          }
+        }
       }
     } catch (error) {
       console.error('Deactivate card error:', error)
@@ -323,7 +389,7 @@ export default function CardsPage() {
               <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">HSA Manager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">HSA by Human Interest</h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
@@ -406,14 +472,6 @@ export default function CardsPage() {
                   </label>
                   <div className="text-lg font-semibold text-primary-900">
                     {account ? `$${account.balance.toFixed(2)}` : 'Loading...'}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-primary-900 mb-2">
-                    Current Cards
-                  </label>
-                  <div className="text-lg font-semibold text-primary-900">
-                    {cards.length} cards
                   </div>
                 </div>
               </div>

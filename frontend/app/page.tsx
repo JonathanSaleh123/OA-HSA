@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, CreditCard, Shield, TrendingUp, Heart } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -29,10 +29,71 @@ export default function Home() {
   const [formData, setFormData] = useState<AuthForm>({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const router = useRouter()
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('hsa_token')
+      const user = localStorage.getItem('hsa_user')
+      
+      console.log('🔍 Checking authentication...', { hasToken: !!token, hasUser: !!user })
+      
+      if (token && user) {
+        try {
+          console.log('🔑 Validating token...')
+          // Validate the token by making a test request to accounts endpoint
+          const response = await fetch('/api/accounts', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          
+          console.log('📡 Token validation response:', response.status)
+          
+          if (response.ok) {
+            // Token is valid, redirect to dashboard
+            console.log('✅ Token valid, redirecting to dashboard')
+            router.push('/dashboard')
+          } else {
+            // Token is invalid, clear it and show login form
+            console.log('❌ Token invalid, clearing and showing login form')
+            localStorage.removeItem('hsa_token')
+            localStorage.removeItem('hsa_user')
+            setIsCheckingAuth(false)
+          }
+        } catch (error) {
+          // Network error or other issue, clear tokens and show login form
+          console.log('🚨 Token validation error:', error)
+          localStorage.removeItem('hsa_token')
+          localStorage.removeItem('hsa_user')
+          setIsCheckingAuth(false)
+        }
+      } else {
+        // No tokens found, show login form
+        console.log('🔓 No tokens found, showing login form')
+        setIsCheckingAuth(false)
+      }
+    }
+    
+    // Add timeout to prevent hanging
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Auth check timeout, showing login form')
+      setIsCheckingAuth(false)
+    }, 5000) // 5 second timeout
+    
+    checkAuth()
+    
+    return () => clearTimeout(timeoutId)
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Prevent submission if still checking auth
+    if (isCheckingAuth) return
+    
     setIsLoading(true)
 
     try {
@@ -66,10 +127,25 @@ export default function Home() {
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Prevent input changes if still checking auth
+    if (isCheckingAuth) return
+    
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     })
+  }
+
+  // Show loading screen while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -228,8 +304,9 @@ export default function Home() {
 
             <div className="mt-6 text-center">
               <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                onClick={() => !isCheckingAuth && setIsLogin(!isLogin)}
+                disabled={isCheckingAuth}
+                className="text-primary-600 hover:text-primary-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLogin 
                   ? "Don't have an account? Sign up" 
@@ -246,6 +323,8 @@ export default function Home() {
                 </p>
               </div>
             )}
+
+
           </div>
         </div>
       </main>

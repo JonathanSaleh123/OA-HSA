@@ -15,9 +15,7 @@ backend/database/*.db
 backend/database/*.sqlite
 backend/database/*.sqlite3
 
-# Log files
-backend/logs/
-*.log
+
 
 # Environment variables
 .env

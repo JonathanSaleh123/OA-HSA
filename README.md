@@ -1,7 +1,5 @@
 # Human Interest OA - HSA (Health Savings Account) Application
 
-
-
 ## Project Structure
 
 ```
@@ -10,37 +8,6 @@ OA-HSA/
 ├── backend/           # Express.js backend service with SQLite Database
 └── README.md         # This file
 ```
-
-## Features
-
-### 🔐 User Management
-- **User Registration & Authentication**: Create and login to HSA accounts with JWT tokens
-- **Profile Management**: View and manage user account information
-
-### 🏦 HSA Account Management
-- **Account Creation**: Automatic HSA account creation upon user registration
-- **Balance Tracking**: Real-time account balance monitoring
-- **Fund Deposits**: Add virtual funds to HSA accounts
-- **Account Summary**: Comprehensive account statistics and insights
-
-### 💳 Virtual Debit Card System
-- **Card Issuance**: Generate virtual debit cards linked to HSA accounts
-- **Card Management**: View, activate, and deactivate cards
-- **Expiration Handling**: Automatic card expiration management
-- **Security**: CVV generation and card number validation
-
-### 💰 Medical Expense Processing
-- **IRS Compliance**: IRS-qualified medical expense verification
-- **Merchant Validation**: Real-time merchant code validation
-- **Transaction Processing**: Secure HSA transaction processing
-- **Medical vs Non-Medical**: Automatic expense classification and approval/decline
-
-### 📊 Analytics & Reporting
-- **Transaction History**: Complete spending history with filtering
-- **Spending Analytics**: Medical vs non-medical expense breakdown
-- **Success Rates**: Transaction approval/decline statistics
-- **Performance Metrics**: Response times and system health monitoring
-
 ## Tech Stack
 - **Frontend**: Next.js 14, React, TypeScript
 - **Styling**: Tailwind CSS

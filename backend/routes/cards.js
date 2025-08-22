@@ -1,7 +1,6 @@
 const express = require('express');
 const { runQuery, getRow, getRows } = require('../database/connection');
 const { verifyToken } = require('./auth');
-
 const router = express.Router();
 
 // Apply authentication middleware to all routes
@@ -18,14 +17,8 @@ const calculateCardStatus = (expiredDate) => {
     console.warn('Invalid expiration date:', expiredDate);
     return false;
   }
-  
   // Compare date strings directly (YYYY-MM-DD format)
   const isActive = expiredDate > nowDate;
-  console.log(expiredDate, nowDate, isActive);
-  
-  // Log for debugging (can be removed in production)
-  console.log(`Card status: expired=${expiredDate}, now=${nowDate}, isActive=${isActive}`);
-  
   return isActive;
 };
 
@@ -42,12 +35,13 @@ const generateCVV = () => {
   return Array.from({ length: 3 }, () => Math.floor(Math.random() * 10)).join('');
 };
 
-// Calculate expiration date (3 years from now)
+// Calculate expiration date (5 years from now)
 const calculateExpiration = () => {
   const now = new Date();
-  const expiration = new Date(now.getFullYear() + 3, now.getMonth(), now.getDate());
+  const expiration = new Date(now.getFullYear() + 5, now.getMonth(), now.getDate());
   return expiration.toISOString().split('T')[0]; // Format as YYYY-MM-DD
 };
+
 
 // Issue new debit card
 router.post('/', async (req, res) => {
@@ -103,6 +97,7 @@ router.post('/', async (req, res) => {
     });
   }
 });
+
 
 // Get user's debit cards
 router.get('/', async (req, res) => {
@@ -302,5 +297,4 @@ router.get('/:id/transactions', async (req, res) => {
     });
   }
 });
-
 module.exports = router;

@@ -17,11 +17,36 @@ const generateToken = (userId, email) => {
   );
 };
 
+// Verify token middleware
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (!token) {
+    console.log('❌ Token verification failed: No token provided');
+    return res.status(401).json({
+      error: 'Access token required'
+    });
+  }
+
+  try {
+    console.log('🔍 Verifying JWT token...');
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('✅ Token verified for user ID:', decoded.userId);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.log('❌ Token verification failed:', error.message);
+    return res.status(401).json({
+      error: 'Invalid or expired token'
+    });
+  }
+};
+
 // User registration
 router.post('/register', async (req, res) => {
   try {
-    console.log('🔐 Registration attempt for:', email);
     const { email, password } = req.body;
+    console.log('🔐 Registration attempt for:', email);
 
     // Validate input
     if (!email || !password) {
@@ -153,31 +178,6 @@ router.post('/login', async (req, res) => {
     });
   }
 });
-
-// Verify token middleware
-const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    console.log('❌ Token verification failed: No token provided');
-    return res.status(401).json({
-      error: 'Access token required'
-    });
-  }
-
-  try {
-    console.log('🔍 Verifying JWT token...');
-    const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('✅ Token verified for user ID:', decoded.userId);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    console.log('❌ Token verification failed:', error.message);
-    return res.status(401).json({
-      error: 'Invalid or expired token'
-    });
-  }
-};
 
 // Get current user profile
 router.get('/profile', verifyToken, async (req, res) => {

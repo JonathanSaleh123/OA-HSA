@@ -3,8 +3,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const logger = require('./utils/logger');
+require('./utils/logRotator'); // Enable log rotation
 
-// Import routes
+// Routes
 const { router: authRoutes } = require('./routes/auth');
 const accountRoutes = require('./routes/accounts');
 const cardRoutes = require('./routes/cards');
@@ -18,28 +20,13 @@ app.use((req, res, next) => {
   const start = Date.now();
   
   // Log request details
-  console.log(`\n📥 ${new Date().toISOString()} - ${req.method} ${req.path}`);
-  console.log(`   Headers:`, {
-    'User-Agent': req.get('User-Agent'),
-    'Authorization': req.get('Authorization') ? 'Bearer ***' : 'None',
-    'Content-Type': req.get('Content-Type'),
-    'Origin': req.get('Origin'),
-    'Referer': req.get('Referer')
-  });
-  
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log(`   Body:`, JSON.stringify(req.body, null, 2));
-  }
+  logger.request(req);
   
   // Log response
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const statusColor = res.statusCode >= 400 ? '🔴' : res.statusCode >= 300 ? '🟡' : '🟢';
-    console.log(`📤 ${statusColor} ${res.statusCode} - ${req.method} ${req.path} (${duration}ms)`);
-    
-    if (res.statusCode >= 400) {
-      console.log(`   Error Response:`, res.locals.errorMessage || 'No error details');
-    }
+    logger.response(req, res, duration);
+    logger.access(req, res, duration);
   });
   
   next();
@@ -96,11 +83,14 @@ app.use('*', (req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('\n🚨 Global Error Handler:');
-  console.error(`   Error: ${err.message}`);
-  console.error(`   Stack: ${err.stack}`);
-  console.error(`   Request: ${req.method} ${req.path}`);
-  console.error(`   User Agent: ${req.get('User-Agent')}`);
+  logger.error('Global Error Handler', {
+    error: err.message,
+    stack: err.stack,
+    method: req.method,
+    path: req.path,
+    userAgent: req.get('User-Agent'),
+    userId: req.user?.userId || 'anonymous'
+  });
   
   // Store error message for logging middleware
   res.locals.errorMessage = err.message;
@@ -113,9 +103,11 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 HSA Backend Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔗 API Base: http://localhost:${PORT}/api`);
+  logger.info('HSA Backend Server started', {
+    port: PORT,
+    healthCheck: `http://localhost:${PORT}/health`,
+    apiBase: `http://localhost:${PORT}/api`
+  });
 });
 
 module.exports = app;

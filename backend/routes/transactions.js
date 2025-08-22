@@ -1,7 +1,6 @@
 const express = require('express');
 const { runQuery, getRow, getRows, runTransaction } = require('../database/connection');
 const { verifyToken } = require('./auth');
-
 const router = express.Router();
 
 // Apply authentication middleware to all routes

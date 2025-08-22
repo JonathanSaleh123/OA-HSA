@@ -43,7 +43,6 @@ export default function TestTransactionPage() {
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCard, setSelectedCard] = useState<number | ''>('');
   const [merchantCode, setMerchantCode] = useState('');
-  const [merchantName, setMerchantName] = useState('');
   const [amount, setAmount] = useState('');
   const [validationResult, setValidationResult] = useState<MerchantValidation | null>(null);
   const [transactionResult, setTransactionResult] = useState<TransactionResult | null>(null);
@@ -52,12 +51,12 @@ export default function TestTransactionPage() {
 
   // Sample merchant codes for testing
   const sampleMerchantCodes = [
-    { code: '8011', name: 'Doctors', description: 'Medical expense' },
-    { code: '8021', name: 'Dentists', description: 'Medical expense' },
-    { code: '8031', name: 'Optometrists', description: 'Medical expense' },
-    { code: '5411', name: 'Grocery Stores', description: 'Non-medical expense' },
-    { code: '5812', name: 'Restaurants', description: 'Non-medical expense' },
-    { code: '5541', name: 'Gas Stations', description: 'Non-medical expense' },
+    { code: '8011', description: 'Medical expense' },
+    { code: '8021', description: 'Medical expense' },
+    { code: '8031', description: 'Medical expense' },
+    { code: '5411', description: 'Non-medical expense' },
+    { code: '5812', description: 'Non-medical expense' },
+    { code: '5541', description: 'Non-medical expense' },
   ];
 
   useEffect(() => {
@@ -80,9 +79,15 @@ export default function TestTransactionPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setCards(data.cards || []);
-        if (data.cards && data.cards.length > 0) {
-          setSelectedCard(data.cards[0].id);
+        // Filter out expired cards
+        const activeCards = (data.cards || []).filter((card: Card) => {
+          const expirationDate = new Date(card.expired);
+          const now = new Date();
+          return expirationDate > now;
+        });
+        setCards(activeCards);
+        if (activeCards.length > 0) {
+          setSelectedCard(activeCards[0].id);
         }
       }
     } catch (error) {
@@ -128,7 +133,7 @@ export default function TestTransactionPage() {
   };
 
   const processTransaction = async () => {
-    if (!selectedCard || !merchantCode.trim() || !merchantName.trim() || !amount.trim()) {
+    if (!selectedCard || !merchantCode.trim() || !amount.trim()) {
       setError('Please fill in all fields');
       return;
     }
@@ -152,7 +157,7 @@ export default function TestTransactionPage() {
         },
         body: JSON.stringify({
           cardId: selectedCard,
-          merchantName: merchantName.trim(),
+          merchantName: 'Test Transaction',
           merchantCode: merchantCode.trim(),
           amount: parseFloat(amount)
         })
@@ -161,9 +166,10 @@ export default function TestTransactionPage() {
       const data = await response.json();
       
       if (response.ok) {
-        setTransactionResult(data);
-        // Refresh cards to get updated balance
-        fetchCards();
+        // Show success notification
+        alert(`Transaction ${data.transaction.status === 'approved' ? 'APPROVED' : 'DECLINED'}: ${data.message}`);
+        // Reset the page
+        resetPage();
       } else {
         setError(data.error || 'Failed to process transaction');
       }
@@ -175,9 +181,16 @@ export default function TestTransactionPage() {
     }
   };
 
-  const fillSampleData = (code: string, name: string) => {
+  const fillSampleData = (code: string) => {
     setMerchantCode(code);
-    setMerchantName(name);
+  };
+
+  const resetPage = () => {
+    setMerchantCode('');
+    setAmount('');
+    setValidationResult(null);
+    setTransactionResult(null);
+    setError('');
   };
 
   return (
@@ -223,19 +236,18 @@ export default function TestTransactionPage() {
               {sampleMerchantCodes.map((merchant) => (
                 <button
                   key={merchant.code}
-                  onClick={() => fillSampleData(merchant.code, merchant.name)}
+                  onClick={() => fillSampleData(merchant.code)}
                   className="p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <div className="font-medium text-sm">{merchant.name}</div>
-                  <div className="text-xs text-gray-500">{merchant.code}</div>
-                  <div className="text-xs text-gray-400">{merchant.description}</div>
+                  <div className="font-medium text-sm">Code: {merchant.code}</div>
+                  <div className="text-xs text-gray-500">{merchant.description}</div>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Transaction Form */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Merchant Code
@@ -249,18 +261,7 @@ export default function TestTransactionPage() {
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Merchant Name
-              </label>
-              <input
-                type="text"
-                value={merchantName}
-                onChange={(e) => setMerchantName(e.target.value)}
-                placeholder="Enter merchant name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -292,7 +293,7 @@ export default function TestTransactionPage() {
           <div className="mb-6">
             <button
               onClick={processTransaction}
-              disabled={loading || !selectedCard || !merchantCode.trim() || !merchantName.trim() || !amount.trim()}
+              disabled={loading || !selectedCard || !merchantCode.trim() || !amount.trim()}
               className="w-full bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
             >
               {loading ? 'Processing...' : 'Process Test Transaction'}
@@ -343,50 +344,6 @@ export default function TestTransactionPage() {
             </div>
           )}
 
-          {/* Transaction Result */}
-          {transactionResult && (
-            <div className="mb-6 p-4 border rounded-md">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Transaction Result</h3>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <span className="font-medium text-gray-700">Status:</span>
-                  <span className={`ml-2 px-3 py-1 rounded-full text-sm font-medium ${
-                    transactionResult.transaction.status === 'approved' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {transactionResult.transaction.status.toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Message:</span>
-                  <span className="ml-2 text-gray-900">{transactionResult.message}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Transaction ID:</span>
-                  <span className="ml-2 text-gray-900">{transactionResult.transaction.id}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Amount:</span>
-                  <span className="ml-2 text-gray-900">${transactionResult.transaction.amount.toFixed(2)}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Previous Balance:</span>
-                  <span className="ml-2 text-gray-900">${transactionResult.account.previousBalance.toFixed(2)}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">New Balance:</span>
-                  <span className="ml-2 text-gray-900">${transactionResult.account.newBalance.toFixed(2)}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Timestamp:</span>
-                  <span className="ml-2 text-gray-900">
-                    {new Date(transactionResult.transaction.timestamp).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

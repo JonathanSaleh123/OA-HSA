@@ -386,13 +386,25 @@ export default function CardsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                <Heart className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">HSA by Human Interest</h1>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900">HSA by Human Interest</h1>
+              </button>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
+              <span className="text-sm text-gray-600">Welcome, {user?.email || 'User'}</span>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Dashboard</span>
+              </button>
             </div>
           </div>
         </div>

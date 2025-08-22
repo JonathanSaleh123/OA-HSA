@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Heart, LogOut } from 'lucide-react';
 
 interface Card {
   id: number;
@@ -48,6 +48,7 @@ export default function TestTransactionPage() {
   const [transactionResult, setTransactionResult] = useState<TransactionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [user, setUser] = useState<{ email: string } | null>(null);
 
   // Sample merchant codes for testing
   const sampleMerchantCodes = [
@@ -60,8 +61,20 @@ export default function TestTransactionPage() {
   ];
 
   useEffect(() => {
+    fetchUserInfo();
     fetchCards();
   }, []);
+
+  const fetchUserInfo = () => {
+    const userInfo = localStorage.getItem('hsa_user');
+    if (userInfo) {
+      try {
+        setUser(JSON.parse(userInfo));
+      } catch (error) {
+        console.error('Error parsing user info:', error);
+      }
+    }
+  };
 
   const fetchCards = async () => {
     try {
@@ -194,20 +207,39 @@ export default function TestTransactionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          {/* Back Button */}
-          <div className="mb-6">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Dashboard</span>
-            </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900">HSA by Human Interest</h1>
+              </button>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Welcome, {user?.email || 'User'}</span>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Dashboard</span>
+              </button>
+            </div>
           </div>
-          
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Transaction Testing</h1>
           
           {/* Card Selection */}
@@ -345,7 +377,7 @@ export default function TestTransactionPage() {
           )}
 
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -65,10 +65,3 @@ The page includes sample merchant codes for testing:
 2. **Test Non-Medical Transaction**: Use code 5411 (Grocery) - should decline
 3. **Test Invalid Code**: Use a random code - should show as unknown
 4. **Test Insufficient Funds**: Try a transaction larger than your balance
-
-## Notes
-
-- This is a testing environment - transactions are real and will affect your account balance
-- Use small amounts for testing
-- The system validates merchant codes against the database
-- All transactions are logged and visible in your transaction history

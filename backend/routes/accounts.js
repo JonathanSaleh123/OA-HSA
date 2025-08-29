@@ -296,68 +296,71 @@ router.get('/:id/balance-history', async (req, res) => {
 
     // Calculate balance over time
     let currentBalance = parseFloat(account.balance);
-    const balanceHistory = [];
     
     // Create a timeline with regular intervals
     const timeline = [];
-    const endDate = new Date();
     const intervalDays = daysToShow <= 7 ? 1 : daysToShow <= 30 ? 3 : daysToShow <= 90 ? 7 : 14;
     
+    // Ensure we include today in the timeline
     for (let i = 0; i <= daysToShow; i += intervalDays) {
+      // Create date for the start of the day in local timezone
       const date = new Date();
       date.setDate(date.getDate() - (daysToShow - i));
+      date.setHours(0, 0, 0, 0); // Set to start of day
       timeline.push(date);
     }
     
-    // Add current balance point
-    balanceHistory.push({
-      date: new Date().toISOString(),
-      balance: currentBalance,
-      type: 'current'
-    });
-
-    // Work backwards through transactions to build balance history
-    for (let i = transactions.length - 1; i >= 0; i--) {
-      const transaction = transactions[i];
-      if (transaction.status === 'approved') {
-        currentBalance += parseFloat(transaction.amount);
-      }
-      
-      balanceHistory.unshift({
-        date: transaction.timestamp,
-        balance: currentBalance,
-        type: 'transaction'
-      });
+    // Always include today if it's not already in the timeline
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    const todayExists = timeline.some(date => 
+      date.getFullYear() === todayDate.getFullYear() &&
+      date.getMonth() === todayDate.getMonth() &&
+      date.getDate() === todayDate.getDate()
+    );
+    
+    if (!todayExists) {
+      timeline.push(todayDate);
     }
-
-    // Add account creation point if within range
-    if (accountCreated >= startDate) {
-      balanceHistory.unshift({
-        date: account.created,
-        balance: 0,
-        type: 'created'
-      });
-    }
-
-    // Create a comprehensive timeline with balance at each point
+    
+    // Sort timeline to ensure proper order
+    timeline.sort((a, b) => a.getTime() - b.getTime());
+    
+    // Create a comprehensive balance history
     const finalBalanceHistory = [];
-    let lastKnownBalance = 0;
     
-    // Sort all balance points by date
-    const allBalancePoints = [...balanceHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Sort transactions by date (oldest first)
+    const sortedTransactions = [...transactions].sort((a, b) => 
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
     
-    // For each timeline point, find the most recent balance
+    // Calculate balance at each timeline point
     timeline.forEach(date => {
       const dateStr = date.toISOString();
       
-      // Find the most recent balance point before or equal to this date
-      let balanceAtDate = lastKnownBalance;
-      for (const point of allBalancePoints) {
-        if (new Date(point.date) <= date) {
-          balanceAtDate = point.balance;
-        } else {
-          break;
+      // For the current day, use the actual current balance
+      const isToday = date.getFullYear() === todayDate.getFullYear() &&
+                     date.getMonth() === todayDate.getMonth() &&
+                     date.getDate() === todayDate.getDate();
+      
+      let balanceAtDate;
+      if (isToday) {
+        balanceAtDate = currentBalance;
+      } else {
+        // For past dates, calculate balance by working backwards from current balance
+        let balanceAtThisDate = currentBalance;
+        
+        // Subtract all transactions that happened after this date
+        for (const transaction of sortedTransactions) {
+          const transactionDate = new Date(transaction.timestamp);
+          transactionDate.setHours(0, 0, 0, 0);
+          
+          if (transactionDate > date && transaction.status === 'approved') {
+            balanceAtThisDate -= parseFloat(transaction.amount);
+          }
         }
+        
+        balanceAtDate = balanceAtThisDate;
       }
       
       finalBalanceHistory.push({
@@ -365,26 +368,47 @@ router.get('/:id/balance-history', async (req, res) => {
         balance: balanceAtDate,
         type: 'timeline'
       });
-      
-      lastKnownBalance = balanceAtDate;
     });
 
-    // If we have very few points, add some additional ones for better visualization
-    if (finalBalanceHistory.length < 3) {
+    // If we have very few points or all balances are 0, add some sample data
+    if (finalBalanceHistory.length < 3 || finalBalanceHistory.every(point => point.balance === 0)) {
       const sampleDays = Math.min(7, daysToShow);
       for (let i = sampleDays; i >= 0; i--) {
         const sampleDate = new Date();
         sampleDate.setDate(sampleDate.getDate() - i);
+        sampleDate.setHours(0, 0, 0, 0);
+        
+        // Use current balance for all sample points if no transactions exist
+        const sampleBalance = sortedTransactions.length === 0 ? currentBalance : 
+          finalBalanceHistory.find(point => point.balance > 0)?.balance || currentBalance;
+        
         finalBalanceHistory.push({
           date: sampleDate.toISOString(),
-          balance: currentBalance,
+          balance: sampleBalance,
           type: 'sample'
         });
       }
     }
 
+    // Ensure we have meaningful data
+    const hasNonZeroBalance = finalBalanceHistory.some(point => point.balance > 0);
+    const hasTransactions = sortedTransactions.length > 0;
+    
+    // If no transactions and no non-zero balances, use current balance for all points
+    if (!hasTransactions && !hasNonZeroBalance && currentBalance > 0) {
+      finalBalanceHistory.forEach(point => {
+        point.balance = currentBalance;
+      });
+    }
+    
     res.json({
-      balanceHistory: finalBalanceHistory
+      balanceHistory: finalBalanceHistory,
+      debug: {
+        currentBalance,
+        transactionCount: sortedTransactions.length,
+        hasNonZeroBalance,
+        timeframe: daysToShow
+      }
     });
 
   } catch (error) {

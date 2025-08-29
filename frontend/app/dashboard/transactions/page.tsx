@@ -272,19 +272,26 @@ export default function TransactionsPage() {
   const formatChartDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    // Normalize both dates to start of day for comparison
+    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const normalizedNow = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    
+    const diffTime = normalizedNow.getTime() - normalizedDate.getTime()
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
     
     // For chart labels, show more specific date information
     if (chartTimeframe <= 7) {
       // For 7 days or less, show day names
       if (diffDays === 0) return 'Today'
       if (diffDays === 1) return 'Yesterday'
+      if (diffDays === -1) return 'Tomorrow'
       return date.toLocaleDateString('en-US', { weekday: 'short' })
     } else if (chartTimeframe <= 30) {
       // For 30 days, show month and day
       if (diffDays === 0) return 'Today'
       if (diffDays === 1) return 'Yesterday'
+      if (diffDays === -1) return 'Tomorrow'
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     } else if (chartTimeframe <= 90) {
       // For 90 days, show month and day

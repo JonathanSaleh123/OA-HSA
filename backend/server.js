@@ -53,7 +53,7 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Body parsing middleware
+// Body parsing middleware - limit the size of the request body to 10mb
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

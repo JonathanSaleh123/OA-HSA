@@ -14,9 +14,34 @@ import {
   Heart,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  TrendingUp
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Line } from 'react-chartjs-2'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js'
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+)
 
 interface User {
   id: number
@@ -44,16 +69,30 @@ interface TransactionStats {
   successRate: string
 }
 
+interface BalanceHistoryPoint {
+  date: string
+  balance: number
+  type: string
+}
+
+interface Account {
+  id: number
+  balance: number
+}
+
 export default function TransactionsPage() {
   const [user, setUser] = useState<User | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [stats, setStats] = useState<TransactionStats | null>(null)
+  const [account, setAccount] = useState<Account | null>(null)
+  const [balanceHistory, setBalanceHistory] = useState<BalanceHistoryPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  const [chartTimeframe, setChartTimeframe] = useState<number>(30)
   const router = useRouter()
 
   const ITEMS_PER_PAGE = 20
@@ -64,10 +103,17 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     if (user) {
+      fetchAccount()
       fetchTransactions()
       fetchStats()
     }
   }, [user, currentPage])
+
+  useEffect(() => {
+    if (account) {
+      fetchBalanceHistory()
+    }
+  }, [account, chartTimeframe])
 
   const checkAuth = () => {
     const token = localStorage.getItem('hsa_token')
@@ -84,6 +130,48 @@ export default function TransactionsPage() {
       localStorage.removeItem('hsa_token')
       localStorage.removeItem('hsa_user')
       router.push('/')
+    }
+  }
+
+  const fetchAccount = async () => {
+    if (!user) return
+
+    try {
+      const token = localStorage.getItem('hsa_token')
+      
+      const response = await fetch('/api/accounts', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setAccount(data.account)
+      }
+    } catch (error) {
+      console.error('Account fetch error:', error)
+    }
+  }
+
+  const fetchBalanceHistory = async () => {
+    if (!account) return
+
+    try {
+      const token = localStorage.getItem('hsa_token')
+      
+      const response = await fetch(`/api/accounts/${account.id}/balance-history?days=${chartTimeframe}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setBalanceHistory(data.balanceHistory)
+      }
+    } catch (error) {
+      console.error('Balance history fetch error:', error)
     }
   }
 
@@ -181,6 +269,32 @@ export default function TransactionsPage() {
     })
   }
 
+  const formatChartDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffTime = Math.abs(now.getTime() - date.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    // For chart labels, show more specific date information
+    if (chartTimeframe <= 7) {
+      // For 7 days or less, show day names
+      if (diffDays === 0) return 'Today'
+      if (diffDays === 1) return 'Yesterday'
+      return date.toLocaleDateString('en-US', { weekday: 'short' })
+    } else if (chartTimeframe <= 30) {
+      // For 30 days, show month and day
+      if (diffDays === 0) return 'Today'
+      if (diffDays === 1) return 'Yesterday'
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    } else if (chartTimeframe <= 90) {
+      // For 90 days, show month and day
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    } else {
+      // For 1 year, show month and year
+      return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+    }
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
@@ -266,6 +380,147 @@ export default function TransactionsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Transaction History</h1>
           <p className="text-lg text-gray-600">View all your HSA spending activity</p>
         </div>
+
+                 {/* Balance Chart */}
+         {account && (
+           <div className="card mb-8">
+             <div className="card-header">
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center space-x-3">
+                   <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                     <TrendingUp className="w-6 h-6 text-primary-600" />
+                   </div>
+                   <div>
+                     <h2 className="card-title">Account Balance Over Time</h2>
+                     <p className="card-subtitle">
+                       Current Balance: {account ? formatCurrency(account.balance) : '$0.00'}
+                     </p>
+                   </div>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <button
+                     onClick={() => setChartTimeframe(7)}
+                     className={`btn-secondary-sm ${chartTimeframe === 7 ? 'bg-primary-600 text-white hover:bg-primary-700' : ''}`}
+                   >
+                     7 Days
+                   </button>
+                   <button
+                     onClick={() => setChartTimeframe(30)}
+                     className={`btn-secondary-sm ${chartTimeframe === 30 ? 'bg-primary-600 text-white hover:bg-primary-700' : ''}`}
+                   >
+                     30 Days
+                   </button>
+                   <button
+                     onClick={() => setChartTimeframe(90)}
+                     className={`btn-secondary-sm ${chartTimeframe === 90 ? 'bg-primary-600 text-white hover:bg-primary-700' : ''}`}
+                   >
+                     90 Days
+                   </button>
+                   <button
+                     onClick={() => setChartTimeframe(365)}
+                     className={`btn-secondary-sm ${chartTimeframe === 365 ? 'bg-primary-600 text-white hover:bg-primary-700' : ''}`}
+                   >
+                     1 Year
+                   </button>
+                 </div>
+               </div>
+             </div>
+             <div className="p-6">
+               {balanceHistory.length === 0 ? (
+                 <div className="text-center py-12">
+                   <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                   <p className="text-gray-600 text-lg">Loading balance history...</p>
+                 </div>
+               ) : (
+                 <div className="h-80">
+                   <Line
+                   data={{
+                     labels: balanceHistory.map(point => formatChartDate(point.date)),
+                     datasets: [
+                       {
+                         label: 'Account Balance',
+                         data: balanceHistory.map(point => point.balance),
+                         borderColor: '#4F46E5', // Primary color
+                         backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                         fill: true,
+                         tension: 0.4,
+                         pointRadius: 3,
+                         pointHoverRadius: 6,
+                         pointBackgroundColor: '#4F46E5',
+                         pointBorderColor: '#ffffff',
+                         pointBorderWidth: 2
+                       }
+                     ]
+                   }}
+                   options={{
+                     responsive: true,
+                     maintainAspectRatio: false,
+                     plugins: {
+                       legend: {
+                         display: false
+                       },
+                       tooltip: {
+                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                         titleColor: '#ffffff',
+                         bodyColor: '#ffffff',
+                         borderColor: '#4F46E5',
+                         borderWidth: 1,
+                         callbacks: {
+                           label: function(context) {
+                             let label = context.dataset.label || '';
+                             if (label) {
+                               label += ': ';
+                             }
+                             if (context.parsed.y !== null) {
+                               label += formatCurrency(context.parsed.y);
+                             }
+                             return label;
+                           }
+                         }
+                       }
+                     },
+                     scales: {
+                       x: {
+                         ticks: {
+                           color: '#6B7280',
+                           maxRotation: 45,
+                           minRotation: 0,
+                           autoSkip: true,
+                           maxTicksLimit: chartTimeframe <= 7 ? 7 : chartTimeframe <= 30 ? 10 : chartTimeframe <= 90 ? 12 : 15
+                         },
+                         grid: {
+                           color: '#E5E7EB'
+                         }
+                       },
+                       y: {
+                         ticks: {
+                           color: '#6B7280',
+                           callback: function(value) {
+                             return formatCurrency(value as number);
+                           }
+                         },
+                         grid: {
+                           color: '#E5E7EB'
+                         }
+                       }
+                     },
+                     interaction: {
+                       intersect: false,
+                       mode: 'index'
+                     },
+                     elements: {
+                       point: {
+                         hoverBackgroundColor: '#4F46E5',
+                         hoverBorderColor: '#ffffff'
+                       }
+                     }
+                   }}
+                   />
+                 </div>
+               )}
+             </div>
+           </div>
+         )}
 
         {/* Statistics Cards */}
         {stats && (
